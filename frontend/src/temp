@@ -1,0 +1,174 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const App = () => {
+  const [products, setProducts] = useState([]);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    quantity: 0,
+    price: 0,
+    image: ''
+  });
+  const [editProduct, setEditProduct] = useState(null);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get('http://localhost:3001/product');
+      setProducts(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  };
+
+  const addProduct = async () => {
+    try {
+      const response = await axios.post('http://localhost:3000/product', newProduct);
+      setProducts([...products, response.data]);
+      setNewProduct({ name: '', quantity: 0, price: 0, image: '' });
+      setMessage('Product added successfully.');
+    } catch (error) {
+      console.log(error);
+      setMessage('Failed to add product.');
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3000/product/${id}`);
+      setProducts(products.filter((product) => product._id !== id));
+      setMessage('Product deleted successfully.');
+    } catch (error) {
+      console.log(error);
+      setMessage('Failed to delete product.');
+    }
+  };
+
+  const editProductForm = (product) => {
+    setEditProduct(product);
+  };
+
+  const cancelEdit = () => {
+    setEditProduct(null);
+  };
+
+  const updateProduct = async (id) => {
+    try {
+      const response = await axios.put(`http://localhost:3000/product/${id}`, editProduct);
+      setProducts(products.map((product) => product._id === id ? response.data : product));
+      setEditProduct(null);
+      setMessage('Product updated successfully.');
+    } catch (error) {
+      console.log(error);
+      setMessage('Failed to update product.');
+    }
+  };
+
+  return (
+    <div className="container p-4 mx-auto">
+      <h1 className="mb-4 text-2xl font-bold">Product List</h1>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {products.map((product) => (
+          <div key={product._id} className="w-64 border rounded shadow-md h-52">
+            <img src={product.image} alt={product.name} className="object-cover w-64 h-32 mb-4" />
+            <h3 className="text-lg font-bold">{product.name}</h3>
+            <p>Price: {product.price}</p>
+            <div className="flex justify-between mt-4">
+              <button className="px-4 py-1 text-white bg-red-500 rounded hover:bg-red-600" onClick={() => deleteProduct(product._id)}>Delete</button>
+              <button className="px-4 py-1 text-white bg-blue-500 rounded hover:bg-blue-600" onClick={() => editProductForm(product)}>Edit</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h2 className="mt-8 text-2xl font-bold">Add Product</h2>
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <input
+          type="text"
+          name="name"
+          value={newProduct.name}
+          onChange={handleInputChange}
+          placeholder="Product Name"
+          className="w-full p-2 border rounded sm:w-auto"
+        />
+        <input
+          type="number"
+          name="quantity"
+          value={newProduct.quantity}
+          onChange={handleInputChange}
+          placeholder="Quantity"
+          className="w-full p-2 border rounded sm:w-auto"
+        />
+        <input
+          type="number"
+          name="price"
+          value={newProduct.price}
+          onChange={handleInputChange}
+          placeholder="Price"
+          className="w-full p-2 border rounded sm:w-auto"
+        />
+        <input
+          type="text"
+          name="image"
+          value={newProduct.image}
+          onChange={handleInputChange}
+          placeholder="Image URL"
+          className="w-full p-2 border rounded sm:w-auto"
+        />
+        <button className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600" onClick={addProduct}>Add Product</button>
+      </div>
+
+      {editProduct && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold">Edit Product</h2>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <input
+              type="text"
+              name="name"
+              value={editProduct.name}
+              onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
+              className="w-full p-2 border rounded sm:w-auto"
+            />
+            <input
+              type="number"
+              name="quantity"
+              value={editProduct.quantity}
+              onChange={(e) => setEditProduct({ ...editProduct, quantity: e.target.value })}
+              className="w-full p-2 border rounded sm:w-auto"
+            />
+            <input
+              type="number"
+              name="price"
+              value={editProduct.price}
+              onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
+              className="w-full p-2 border rounded sm:w-auto"
+            />
+            <input
+              type="text"
+              name="image"
+              value={editProduct.image}
+              onChange={(e) => setEditProduct({ ...editProduct, image: e.target.value })}
+              className="w-full p-2 border rounded sm:w-auto"
+            />
+            <div className="flex gap-4">
+              <button className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600" onClick={() => updateProduct(editProduct._id)}>Update Product</button>
+              <button className="px-4 py-2 text-white bg-gray-500 rounded hover:bg-gray-600" onClick={cancelEdit}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {message && <p>{message}</p>}
+    </div>
+  );
+};
+
+export default App;
